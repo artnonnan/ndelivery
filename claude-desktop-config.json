@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "gameplan": {
+      "command": "node",
+      "args": ["D:/GameEngine/NDelivery/ndelivery/dist/server/mcp-server.js"]
+    }
+  }
+}

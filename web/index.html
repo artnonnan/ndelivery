@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GamePlan</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3250;
+    --accent: #5b6af0;
+    --accent2: #7c8cf8;
+    --text: #e2e4f0;
+    --text2: #8b90b0;
+    --danger: #e05c5c;
+    --success: #4caf7d;
+    --warn: #f5a623;
+    --tag-low: #3a4a3a;
+    --tag-med: #4a3a1a;
+    --tag-high: #4a1a1a;
+    --radius: 8px;
+    --shadow: 0 2px 16px rgba(0,0,0,0.5);
+  }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Topbar ── */
+  #topbar {
+    height: 52px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 10px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .logo {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent2);
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  #project-select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    cursor: pointer;
+    min-width: 180px;
+    max-width: 260px;
+  }
+  .tab-group { display: flex; gap: 4px; margin-left: auto; }
+  .tab-btn {
+    background: none;
+    border: 1px solid transparent;
+    color: var(--text2);
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tab-btn:hover { background: var(--surface2); color: var(--text); }
+  .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* ── Buttons ── */
+  .btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 7px 14px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-danger { background: rgba(224,92,92,0.12); color: var(--danger); border: 1px solid rgba(224,92,92,0.3); }
+  .btn-danger:hover { background: rgba(224,92,92,0.22); opacity: 1; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .btn-icon { padding: 5px 7px; font-size: 13px; background: none; border: none; color: var(--text2); cursor: pointer; border-radius: 4px; line-height: 1; }
+  .btn-icon:hover { background: var(--surface2); color: var(--text); }
+
+  /* ── Layout ── */
+  #app { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── Category Sidebar ── */
+  #sidebar {
+    width: 210px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+  .sidebar-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text2);
+    padding: 14px 14px 6px;
+  }
+  .cat-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    border-left: 3px solid transparent;
+    transition: background 0.12s;
+  }
+  .cat-item:hover { background: var(--surface2); }
+  .cat-item.active { background: var(--surface2); border-left-color: var(--accent); }
+  .cat-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .cat-count {
+    margin-left: auto;
+    background: var(--surface);
+    color: var(--text2);
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 20px;
+  }
+  .cat-item.active .cat-count { background: var(--accent); color: #fff; }
+
+  /* ── Main ── */
+  #main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  .view { display: none; flex: 1; overflow: hidden; }
+  .view.active { display: flex; flex-direction: column; }
+
+  /* ── Kanban ── */
+  #kanban-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  #kanban-board {
+    display: flex;
+    gap: 14px;
+    padding: 18px;
+    overflow-x: auto;
+    flex: 1;
+    align-items: flex-start;
+  }
+  .kanban-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    width: 275px;
+    min-width: 275px;
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+  }
+  .col-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 13px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .col-count {
+    background: var(--surface2);
+    color: var(--text2);
+    border-radius: 20px;
+    padding: 1px 7px;
+    font-size: 11px;
+    margin-left: auto;
+  }
+  .col-tasks { overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 7px; flex: 1; }
+  .task-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 11px;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.1s;
+  }
+  .task-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .task-card-title { font-size: 13px; font-weight: 500; margin-bottom: 5px; line-height: 1.4; }
+  .task-card-desc { font-size: 12px; color: var(--text2); line-height: 1.4; margin-bottom: 9px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .task-card-meta { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+  .badge { font-size: 11px; padding: 2px 7px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+  .badge-cat { background: var(--surface); border: 1px solid var(--border); color: var(--text2); }
+  .badge-low { background: var(--tag-low); color: #7ed321; }
+  .badge-medium { background: var(--tag-med); color: #f5a623; }
+  .badge-high { background: var(--tag-high); color: #e05c5c; }
+  .col-add-btn {
+    margin: 6px 8px 8px;
+    padding: 7px;
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--text2);
+    border-radius: var(--radius);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .col-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .stage-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .stage-0 { background: var(--text2); }
+  .stage-1 { background: var(--accent); }
+  .stage-2 { background: var(--warn); }
+  .stage-3 { background: var(--success); }
+
+  /* ── Empty state ── */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    color: var(--text2);
+  }
+  .empty-state .icon { font-size: 48px; opacity: 0.4; }
+  .empty-state p { font-size: 15px; }
+
+  /* ── Design Doc view ── */
+  #doc-view { display: flex; flex: 1; overflow: hidden; }
+
+  /* File tree sidebar */
+  #doc-tree {
+    width: 210px;
+    min-width: 210px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #doc-tree-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 10px 8px;
+    border-bottom: 1px solid var(--border);
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  #doc-tree-header span { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); flex: 1; }
+  #doc-tree-body { flex: 1; overflow-y: auto; padding: 6px 4px; }
+
+  /* Tree items */
+  .tree-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    user-select: none;
+    position: relative;
+  }
+  .tree-item:hover { background: var(--surface2); }
+  .tree-item.active { background: var(--surface2); color: var(--accent2); }
+  .tree-item .tree-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tree-item .tree-del {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text2);
+    cursor: pointer;
+    padding: 0 2px;
+    font-size: 13px;
+    line-height: 1;
+    border-radius: 3px;
+  }
+  .tree-item:hover .tree-del { display: block; }
+  .tree-item .tree-del:hover { color: var(--danger); }
+  .tree-folder-children { padding-left: 14px; }
+  .tree-caret { font-size: 10px; color: var(--text2); flex-shrink: 0; transition: transform 0.15s; }
+  .tree-caret.open { transform: rotate(90deg); }
+  .tree-file-icon { font-size: 13px; flex-shrink: 0; }
+
+  /* Editor + preview */
+  #doc-editor-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    min-width: 0;
+  }
+  #doc-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  #doc-file-name { font-size: 13px; font-weight: 500; color: var(--text2); flex: 1; }
+  #doc-textarea {
+    flex: 1;
+    background: var(--bg);
+    color: var(--text);
+    border: none;
+    padding: 18px 20px;
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 13px;
+    line-height: 1.75;
+    resize: none;
+    outline: none;
+  }
+  .doc-no-file {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text2);
+    font-size: 14px;
+  }
+  #doc-preview-pane { flex: 1; overflow-y: auto; padding: 24px 28px; background: var(--surface); min-width: 0; }
+  #doc-preview { line-height: 1.75; }
+  #doc-preview h1 { font-size: 21px; font-weight: 700; margin-bottom: 12px; color: var(--accent2); }
+  #doc-preview h2 { font-size: 16px; font-weight: 600; margin: 18px 0 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+  #doc-preview h3 { font-size: 14px; font-weight: 600; margin: 14px 0 6px; color: var(--text2); }
+  #doc-preview p { margin-bottom: 10px; font-size: 14px; }
+  #doc-preview ul, #doc-preview ol { margin: 8px 0 10px 20px; font-size: 14px; }
+  #doc-preview li { margin-bottom: 4px; }
+  #doc-preview code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: monospace; }
+  #doc-preview strong { font-weight: 600; }
+  #doc-preview em { color: var(--text2); }
+
+  /* ── Modals ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    width: 460px;
+    max-width: 95vw;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .modal h3 { font-size: 16px; font-weight: 600; }
+  .modal label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 4px; }
+  .modal input, .modal select, .modal textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--accent); }
+  .modal textarea { resize: vertical; min-height: 72px; font-family: inherit; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+
+  /* ── Task Panel ── */
+  #task-panel {
+    position: fixed;
+    right: -420px;
+    top: 52px;
+    bottom: 0;
+    width: 420px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    z-index: 50;
+    transition: right 0.22s ease, width 0.22s ease, top 0.22s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  #task-panel.open { right: 0; }
+  #task-panel.fullscreen { right: 0; top: 0; width: 100vw; border-left: none; z-index: 200; }
+  #task-panel-header { display: flex; align-items: center; padding: 13px 14px; border-bottom: 1px solid var(--border); gap: 8px; }
+  #task-panel-header h3 { font-size: 14px; font-weight: 600; flex: 1; }
+  #task-panel-body { padding: 14px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 13px; }
+  .field-group label { font-size: 11px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 5px; }
+  .field-group select, .field-group input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); padding: 7px 10px; border-radius: var(--radius); font-size: 13px; outline: none;
+  }
+  .field-group textarea {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 10px; border-radius: var(--radius); font-size: 13px;
+    outline: none; resize: vertical; min-height: 90px; font-family: inherit; line-height: 1.5;
+  }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── Confirm Modal ── */
+  #modal-confirm .modal { width: 360px; }
+  #modal-confirm .modal h3 { color: var(--danger); }
+  #confirm-msg { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
+  /* ── Format Toolbar ── */
+  .format-toolbar { display: flex; gap: 3px; margin-bottom: 5px; }
+  .fmt-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 3px 9px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    line-height: 1.4;
+    transition: all 0.12s;
+  }
+  .fmt-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .fmt-btn b { font-weight: 700; }
+  .fmt-btn i { font-style: italic; }
+
+  /* ── Task panel desc tabs ── */
+  .desc-tabs { display: flex; gap: 2px; margin-bottom: 5px; }
+  .desc-tab {
+    background: none; border: 1px solid var(--border); color: var(--text2);
+    padding: 3px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;
+  }
+  .desc-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  #panel-task-desc-preview {
+    min-height: 90px; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 8px 10px; font-size: 13px; line-height: 1.6;
+    overflow-y: auto;
+  }
+  #panel-task-desc-preview img { max-width: 100%; border-radius: 6px; margin: 6px 0; display: block; }
+  #panel-task-desc-preview strong { font-weight: 600; }
+  #panel-task-desc-preview em { color: var(--text2); }
+  #panel-task-desc-preview p { margin-bottom: 6px; }
+
+  /* ── Assignee badge ── */
+  .badge-assignee { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); font-size: 11px; padding: 1px 6px; border-radius: 20px; }
+  .badge-doc-link { background: rgba(91,106,240,0.15); color: var(--accent2); border: 1px solid rgba(91,106,240,0.3); font-size: 11px; padding: 1px 6px; border-radius: 20px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div id="topbar">
+  <div class="logo"><span>🎮</span> GamePlan</div>
+  <select id="project-select"></select>
+  <button class="btn btn-ghost btn-sm" id="btn-new-project">+ Project</button>
+  <button class="btn btn-danger btn-sm" id="btn-delete-project" style="display:none">Delete</button>
+  <div class="tab-group">
+    <button class="tab-btn active" data-tab="kanban">Kanban Board</button>
+    <button class="tab-btn" data-tab="designdoc">Design Doc</button>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <!-- Sidebar: Categories -->
+  <div id="sidebar">
+    <div class="sidebar-section-title">Disciplines</div>
+    <div id="cat-list"></div>
+  </div>
+
+  <!-- Main -->
+  <div id="main">
+
+    <!-- Kanban View -->
+    <div class="view active" id="view-kanban">
+      <div id="kanban-toolbar">
+        <div style="font-size:15px;font-weight:600" id="kanban-project-name"></div>
+        <div style="flex:1"></div>
+        <button class="btn btn-sm" id="btn-new-task">+ New Task</button>
+      </div>
+      <div id="kanban-board"></div>
+    </div>
+
+    <!-- Design Doc View -->
+    <div class="view" id="view-designdoc">
+      <div id="doc-view">
+        <!-- File Tree -->
+        <div id="doc-tree">
+          <div id="doc-tree-header">
+            <span>Files</span>
+            <button class="btn-icon" id="btn-add-folder" title="New Folder">📁+</button>
+            <button class="btn-icon" id="btn-add-file" title="New File">📄+</button>
+          </div>
+          <div id="doc-tree-body"></div>
+        </div>
+        <!-- Editor -->
+        <div id="doc-editor-pane">
+          <div id="doc-toolbar">
+            <span id="doc-file-name">— no file selected —</span>
+            <div class="format-toolbar" id="doc-format-toolbar" style="display:none;margin:0 6px 0 auto">
+              <button class="fmt-btn" data-fmt="bold" data-target="doc-textarea"><b>B</b></button>
+              <button class="fmt-btn" data-fmt="italic" data-target="doc-textarea"><i>I</i></button>
+              <button class="fmt-btn" data-fmt="normal" data-target="doc-textarea">T</button>
+              <button class="fmt-btn" data-fmt="image" data-target="doc-textarea">🖼</button>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="btn-save-doc" style="display:none">Save</button>
+          </div>
+          <div class="doc-no-file" id="doc-no-file">Select or create a file to start editing</div>
+          <textarea id="doc-textarea" spellcheck="false" style="display:none" placeholder="Write in Markdown..."></textarea>
+        </div>
+        <!-- Preview -->
+        <div id="doc-preview-pane">
+          <div id="doc-preview"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal: New Project -->
+<div class="modal-overlay" id="modal-new-project">
+  <div class="modal">
+    <h3>New Project</h3>
+    <div>
+      <label>Project Name *</label>
+      <input id="np-name" type="text" placeholder="e.g. My Awesome Game" />
+    </div>
+    <div>
+      <label>Description</label>
+      <input id="np-desc" type="text" placeholder="Optional" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="np-cancel">Cancel</button>
+      <button class="btn" id="np-create">Create Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: New Task -->
+<div class="modal-overlay" id="modal-new-task">
+  <div class="modal">
+    <h3>New Task</h3>
+    <div>
+      <label>Title *</label>
+      <input id="new-title" type="text" placeholder="Task title" />
+    </div>
+    <div>
+      <label>Description</label>
+      <textarea id="new-desc" placeholder="Optional description..."></textarea>
+    </div>
+    <div>
+      <label>Stage</label>
+      <select id="new-stage"></select>
+    </div>
+    <div>
+      <label>Category</label>
+      <select id="new-cat"></select>
+    </div>
+    <div>
+      <label>Assignee</label>
+      <input id="new-assignee" type="text" placeholder="Name or username" />
+    </div>
+    <div>
+      <label>Priority</label>
+      <select id="new-priority">
+        <option value="low">Low</option>
+        <option value="medium" selected>Medium</option>
+        <option value="high">High</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="nt-cancel">Cancel</button>
+      <button class="btn" id="nt-create">Create Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Confirm -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal">
+    <h3 id="confirm-title">Confirm</h3>
+    <p id="confirm-msg"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="confirm-cancel">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: New Folder -->
+<div class="modal-overlay" id="modal-new-folder">
+  <div class="modal" style="width:340px">
+    <h3>New Folder</h3>
+    <div>
+      <label>Folder Name *</label>
+      <input id="nf-name" type="text" placeholder="e.g. Characters" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="nf-cancel">Cancel</button>
+      <button class="btn" id="nf-create">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: New File -->
+<div class="modal-overlay" id="modal-new-file">
+  <div class="modal" style="width:340px">
+    <h3>New File</h3>
+    <div>
+      <label>File Name *</label>
+      <input id="nfi-name" type="text" placeholder="e.g. overview.md" />
+    </div>
+    <div>
+      <label>Folder (optional)</label>
+      <select id="nfi-parent"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="nfi-cancel">Cancel</button>
+      <button class="btn" id="nfi-create">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Task Side Panel -->
+<div id="task-panel">
+  <div id="task-panel-header">
+    <h3 id="panel-title">Task</h3>
+    <button class="btn btn-ghost btn-sm" id="btn-panel-save">Save</button>
+    <button class="btn-icon" id="btn-panel-fullscreen" title="Expand">⛶</button>
+    <button class="btn-icon" id="btn-panel-close">✕</button>
+  </div>
+  <div id="task-panel-body">
+    <div class="field-group"><label>Title</label><input id="panel-task-title" type="text" /></div>
+    <div class="field-group">
+      <label>Description</label>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <div class="desc-tabs">
+          <button class="desc-tab active" id="desc-tab-edit" onclick="switchDescTab('edit')">Edit</button>
+          <button class="desc-tab" id="desc-tab-preview" onclick="switchDescTab('preview')">Preview</button>
+        </div>
+        <div class="format-toolbar" id="desc-format-bar" style="margin:0">
+          <button class="fmt-btn" data-fmt="bold" data-target="panel-task-desc"><b>B</b></button>
+          <button class="fmt-btn" data-fmt="italic" data-target="panel-task-desc"><i>I</i></button>
+          <button class="fmt-btn" data-fmt="normal" data-target="panel-task-desc">T</button>
+          <button class="fmt-btn" data-fmt="image" data-target="panel-task-desc">🖼</button>
+        </div>
+      </div>
+      <textarea id="panel-task-desc"></textarea>
+      <div id="panel-task-desc-preview" style="display:none"></div>
+    </div>
+    <div class="field-group"><label>Assignee</label><input id="panel-task-assignee" type="text" placeholder="Name or username" /></div>
+    <div class="field-group">
+      <label>Linked Doc</label>
+      <div style="display:flex;gap:6px;align-items:center">
+        <select id="panel-task-linked-doc" style="flex:1"></select>
+        <button class="btn btn-ghost btn-sm" id="btn-goto-doc" title="Open doc" style="display:none">Open →</button>
+      </div>
+    </div>
+    <div class="field-group"><label>Stage</label><select id="panel-task-stage"></select></div>
+    <div class="field-group"><label>Category</label><select id="panel-task-cat"></select></div>
+    <div class="field-group">
+      <label>Priority</label>
+      <select id="panel-task-priority">
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+    </div>
+    <div style="margin-top:auto;padding-top:8px">
+      <button class="btn btn-danger" style="width:100%" id="panel-delete">Delete Task</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let db = { projects: [] };
+let currentProjectId = null;
+let activeCategoryFilter = null;
+let openTaskId = null;
+let activeDocFileId = null;   // currently open doc file
+
+// ── DB ────────────────────────────────────────────────────────────────────────
+async function loadDB() {
+  try {
+    const res = await fetch('/api/db');
+    if (res.ok) { db = await res.json(); return; }
+  } catch(e) {}
+  db = { projects: [] };
+}
+
+function saveDB() {
+  fetch('/api/db', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(db),
+  }).catch(console.error);
+}
+
+function currentProject() {
+  return db.projects.find(p => p.id === currentProjectId) ?? null;
+}
+
+function generateId(prefix) {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+}
+
+function today() {
+  return new Date().toISOString().split('T')[0];
+}
+
+// ── Project selector ──────────────────────────────────────────────────────────
+function renderProjectSelect() {
+  const sel = document.getElementById('project-select');
+  const delBtn = document.getElementById('btn-delete-project');
+
+  if (db.projects.length === 0) {
+    sel.innerHTML = '<option value="">— no projects —</option>';
+    delBtn.style.display = 'none';
+    return;
+  }
+  sel.innerHTML = db.projects.map(p =>
+    `<option value="${p.id}" ${p.id === currentProjectId ? 'selected' : ''}>${p.name}</option>`
+  ).join('');
+  delBtn.style.display = '';
+}
+
+function renderAll() {
+  renderProjectSelect();
+  renderSidebar();
+  renderKanban();
+  if (document.getElementById('view-designdoc').classList.contains('active')) renderDesignDoc();
+}
+
+// ── Sidebar (categories) ──────────────────────────────────────────────────────
+function renderSidebar() {
+  const project = currentProject();
+  const list = document.getElementById('cat-list');
+
+  if (!project) { list.innerHTML = ''; return; }
+
+  list.innerHTML = [
+    { id: null, name: 'All', color: '#8b90b0', icon: '', count: project.tasks.length }
+  ].concat(project.categories.map(c => ({
+    id: c.id, name: `${c.icon} ${c.name}`, color: c.color, icon: '',
+    count: project.tasks.filter(t => t.categoryId === c.id).length
+  }))).map(item => {
+    const active = activeCategoryFilter === item.id;
+    return `<div class="cat-item ${active?'active':''}" data-cat="${item.id ?? 'all'}">
+      <div class="cat-dot" style="background:${item.color}"></div>
+      <span>${item.name}</span>
+      <span class="cat-count">${item.count}</span>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.cat-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const v = el.dataset.cat;
+      activeCategoryFilter = v === 'all' ? null : v;
+      renderSidebar();
+      renderKanban();
+    });
+  });
+}
+
+// ── Kanban ────────────────────────────────────────────────────────────────────
+function renderKanban() {
+  const project = currentProject();
+  const board = document.getElementById('kanban-board');
+  const nameEl = document.getElementById('kanban-project-name');
+
+  if (!project) {
+    nameEl.textContent = '';
+    board.innerHTML = `<div class="empty-state" style="flex:1;width:100%">
+      <div class="icon">🗂️</div>
+      <p>No project selected</p>
+      <button class="btn" onclick="openModal('modal-new-project')">+ Create Project</button>
+    </div>`;
+    return;
+  }
+
+  nameEl.textContent = project.name;
+  let tasks = project.tasks;
+  if (activeCategoryFilter) tasks = tasks.filter(t => t.categoryId === activeCategoryFilter);
+
+  board.innerHTML = project.stages.map((stage, si) => {
+    const stageTasks = tasks.filter(t => t.stage === stage);
+    return `<div class="kanban-col">
+      <div class="col-header">
+        <div class="stage-dot stage-${Math.min(si,3)}"></div>
+        ${esc(stage)}
+        <span class="col-count">${stageTasks.length}</span>
+      </div>
+      <div class="col-tasks">
+        ${stageTasks.map(t => renderTaskCard(t, project)).join('')}
+      </div>
+      <button class="col-add-btn" data-stage="${esc(stage)}">+ Add task</button>
+    </div>`;
+  }).join('');
+
+  board.querySelectorAll('.task-card').forEach(card =>
+    card.addEventListener('click', () => openTaskPanel(card.dataset.id))
+  );
+  board.querySelectorAll('.col-add-btn').forEach(btn =>
+    btn.addEventListener('click', () => openNewTaskModal(btn.dataset.stage))
+  );
+}
+
+function renderTaskCard(task, project) {
+  const cat = project.categories.find(c => c.id === task.categoryId);
+  const linkedFile = task.linkedDocFileId
+    ? (project.designDoc.files ?? []).find(f => f.id === task.linkedDocFileId)
+    : null;
+  return `<div class="task-card" data-id="${task.id}">
+    <div class="task-card-title">${esc(task.title)}</div>
+    ${task.description ? `<div class="task-card-desc">${esc(task.description.replace(/!\[.*?\]\(.*?\)/g,'[img]'))}</div>` : ''}
+    <div class="task-card-meta">
+      ${cat ? `<span class="badge badge-cat" style="border-color:${cat.color}40;color:${cat.color}">${cat.icon} ${esc(cat.name)}</span>` : ''}
+      <span class="badge badge-${task.priority}">${task.priority}</span>
+      ${task.assignee ? `<span class="badge badge-assignee">👤 ${esc(task.assignee)}</span>` : ''}
+      ${linkedFile ? `<span class="badge badge-doc-link" data-doc="${task.linkedDocFileId}" onclick="event.stopPropagation();switchTab('designdoc');setTimeout(()=>openDocFile('${task.linkedDocFileId}'),50)">📄 ${esc(linkedFile.name)}</span>` : ''}
+    </div>
+  </div>`;
+}
+
+// ── Design Doc ────────────────────────────────────────────────────────────────
+function renderDesignDoc() {
+  const project = currentProject();
+  if (!project) {
+    document.getElementById('doc-tree-body').innerHTML = '';
+    showDocNoFile();
+    return;
+  }
+
+  // Ensure file tree exists on older data
+  if (!project.designDoc.files) project.designDoc.files = [];
+
+  renderDocTree(project);
+
+  // Re-open active file if still exists
+  const stillExists = project.designDoc.files.find(f => f.id === activeDocFileId && f.type === 'file');
+  if (stillExists) {
+    openDocFile(stillExists.id, false);
+  } else {
+    activeDocFileId = null;
+    showDocNoFile();
+  }
+}
+
+function renderDocTree(project) {
+  const body = document.getElementById('doc-tree-body');
+  const files = project.designDoc.files;
+
+  function renderItems(parentId, depth) {
+    return files
+      .filter(f => (f.parentId ?? null) === parentId)
+      .map(item => {
+        if (item.type === 'folder') {
+          const isOpen = item.open !== false;
+          const children = renderItems(item.id, depth + 1);
+          return `<div>
+            <div class="tree-item" data-id="${item.id}" data-type="folder">
+              <span class="tree-caret ${isOpen?'open':''}">▶</span>
+              <span class="tree-file-icon">📁</span>
+              <span class="tree-label">${esc(item.name)}</span>
+              <button class="tree-del" data-del="${item.id}" title="Delete folder">✕</button>
+            </div>
+            <div class="tree-folder-children" id="fc_${item.id}" style="display:${isOpen?'block':'none'}">${children}</div>
+          </div>`;
+        } else {
+          const active = item.id === activeDocFileId;
+          return `<div class="tree-item ${active?'active':''}" data-id="${item.id}" data-type="file">
+            <span class="tree-file-icon">📄</span>
+            <span class="tree-label">${esc(item.name)}</span>
+            <button class="tree-del" data-del="${item.id}" title="Delete file">✕</button>
+          </div>`;
+        }
+      }).join('');
+  }
+
+  body.innerHTML = renderItems(null, 0);
+
+  // Folder toggle
+  body.querySelectorAll('.tree-item[data-type="folder"]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target.classList.contains('tree-del')) return;
+      const id = el.dataset.id;
+      const item = project.designDoc.files.find(f => f.id === id);
+      item.open = !(item.open !== false);
+      saveDB();
+      renderDocTree(project);
+    });
+  });
+
+  // File click
+  body.querySelectorAll('.tree-item[data-type="file"]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target.classList.contains('tree-del')) return;
+      openDocFile(el.dataset.id);
+    });
+  });
+
+  // Delete buttons
+  body.querySelectorAll('.tree-del').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.del;
+      deleteDocItem(id, project);
+    });
+  });
+}
+
+function showDocNoFile() {
+  document.getElementById('doc-no-file').style.display = 'flex';
+  document.getElementById('doc-textarea').style.display = 'none';
+  document.getElementById('btn-save-doc').style.display = 'none';
+  document.getElementById('doc-format-toolbar').style.display = 'none';
+  document.getElementById('doc-file-name').textContent = '— no file selected —';
+  document.getElementById('doc-preview').innerHTML = '';
+}
+
+function openDocFile(fileId, saveCurrentFirst) {
+  const project = currentProject();
+  if (!project) return;
+
+  // Auto-save previous file
+  if (saveCurrentFirst !== false && activeDocFileId && activeDocFileId !== fileId) {
+    const prev = project.designDoc.files.find(f => f.id === activeDocFileId);
+    if (prev) prev.content = document.getElementById('doc-textarea').value;
+  }
+
+  const file = project.designDoc.files.find(f => f.id === fileId && f.type === 'file');
+  if (!file) return;
+
+  activeDocFileId = fileId;
+  document.getElementById('doc-no-file').style.display = 'none';
+  const ta = document.getElementById('doc-textarea');
+  ta.style.display = 'block';
+  ta.value = file.content ?? '';
+  document.getElementById('doc-file-name').textContent = file.name;
+  document.getElementById('btn-save-doc').style.display = '';
+  document.getElementById('doc-format-toolbar').style.display = '';
+  renderDocPreview(ta.value);
+
+  // Re-render tree to update active highlight
+  renderDocTree(project);
+}
+
+function deleteDocItem(id, project) {
+  const item = project.designDoc.files.find(f => f.id === id);
+  if (!item) return;
+
+  const label = item.type === 'folder'
+    ? `Delete folder "${item.name}" and all its contents?`
+    : `Delete file "${item.name}"?`;
+
+  showConfirm('Delete', `${label} This cannot be undone.`, () => {
+    if (item.type === 'folder') {
+      const toDelete = collectDescendants(id, project.designDoc.files);
+      toDelete.push(id);
+      project.designDoc.files = project.designDoc.files.filter(f => !toDelete.includes(f.id));
+      if (toDelete.includes(activeDocFileId)) { activeDocFileId = null; showDocNoFile(); }
+    } else {
+      project.designDoc.files = project.designDoc.files.filter(f => f.id !== id);
+      if (activeDocFileId === id) { activeDocFileId = null; showDocNoFile(); }
+    }
+    saveDB();
+    renderDocTree(project);
+  });
+}
+
+function collectDescendants(folderId, files) {
+  const ids = [];
+  files.filter(f => f.parentId === folderId).forEach(child => {
+    ids.push(child.id);
+    if (child.type === 'folder') ids.push(...collectDescendants(child.id, files));
+  });
+  return ids;
+}
+
+function renderDocPreview(md) {
+  document.getElementById('doc-preview').innerHTML = simpleMarkdown(md);
+}
+
+function simpleMarkdown(md) {
+  // Extract images before escaping so src survives
+  const imgs = [];
+  md = md.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
+    const idx = imgs.length;
+    imgs.push({ alt, src });
+    return `\x00IMG${idx}\x00`;
+  });
+  let html = md
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/^[-*] (.+)$/gm, '<li>$1</li>')
+    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, s => `<ul>${s}</ul>`)
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/^([^<\n].+)$/gm, '<p>$1</p>');
+  // Restore images
+  html = html.replace(/\x00IMG(\d+)\x00/g, (_, i) => {
+    const { alt, src } = imgs[+i];
+    return `<img src="${src}" alt="${alt}" style="max-width:100%;border-radius:6px;margin:6px 0;display:block">`;
+  });
+  return html;
+}
+
+// ── Desc tab (Edit / Preview) ─────────────────────────────────────────────────
+function switchDescTab(tab) {
+  const ta = document.getElementById('panel-task-desc');
+  const preview = document.getElementById('panel-task-desc-preview');
+  const fmtBar = document.getElementById('desc-format-bar');
+  document.getElementById('desc-tab-edit').classList.toggle('active', tab === 'edit');
+  document.getElementById('desc-tab-preview').classList.toggle('active', tab === 'preview');
+  if (tab === 'preview') {
+    preview.innerHTML = simpleMarkdown(ta.value || '*No description*');
+    ta.style.display = 'none';
+    preview.style.display = 'block';
+    fmtBar.style.display = 'none';
+  } else {
+    ta.style.display = 'block';
+    preview.style.display = 'none';
+    fmtBar.style.display = '';
+    ta.focus();
+  }
+}
+
+// ── Formatting helpers ────────────────────────────────────────────────────────
+function insertAtCursor(ta, text) {
+  const s = ta.selectionStart, e = ta.selectionEnd;
+  ta.setRangeText(text, s, e, 'end');
+  ta.focus();
+  ta.dispatchEvent(new Event('input'));
+}
+
+function applyFormat(ta, type) {
+  const s = ta.selectionStart, e = ta.selectionEnd;
+  const sel = ta.value.substring(s, e) || '';
+  if (type === 'bold') {
+    ta.setRangeText(`**${sel || 'bold'}**`, s, e, 'select');
+  } else if (type === 'italic') {
+    ta.setRangeText(`*${sel || 'italic'}*`, s, e, 'select');
+  } else if (type === 'normal') {
+    // Strip bold/italic markers from selection
+    const clean = sel.replace(/\*\*(.+?)\*\*/g,'$1').replace(/\*(.+?)\*/g,'$1');
+    ta.setRangeText(clean, s, e, 'select');
+  }
+  ta.focus();
+  ta.dispatchEvent(new Event('input'));
+}
+
+function extractUploadUrls(text) {
+  const urls = [];
+  const re = /!\[.*?\]\((\/uploads\/[^)]+)\)/g;
+  let m;
+  while ((m = re.exec(text)) !== null) urls.push(m[1]);
+  return urls;
+}
+
+async function deleteUploadUrl(url) {
+  const name = url.split('/').pop();
+  await fetch(`/api/upload?name=${encodeURIComponent(name)}`, { method: 'DELETE' }).catch(() => {});
+}
+
+async function insertImage(ta) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    try {
+      const res = await fetch(`/api/upload?name=${encodeURIComponent(file.name)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      const { url } = await res.json();
+      insertAtCursor(ta, `\n![${file.name}](${url})\n`);
+    } catch(e) {
+      alert('Upload failed: ' + e);
+    }
+  };
+  input.click();
+}
+
+// ── Task Panel ────────────────────────────────────────────────────────────────
+function openTaskPanel(taskId) {
+  const project = currentProject();
+  if (!project) return;
+  const task = project.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  openTaskId = taskId;
+
+  document.getElementById('panel-title').textContent = task.title;
+  document.getElementById('panel-task-title').value = task.title;
+  document.getElementById('panel-task-desc').value = task.description;
+  document.getElementById('panel-task-assignee').value = task.assignee ?? '';
+  document.getElementById('panel-task-stage').innerHTML =
+    project.stages.map(s => `<option ${s===task.stage?'selected':''}>${s}</option>`).join('');
+  document.getElementById('panel-task-cat').innerHTML =
+    project.categories.map(c => `<option value="${c.id}" ${c.id===task.categoryId?'selected':''}>${c.icon} ${c.name}</option>`).join('');
+  document.getElementById('panel-task-priority').value = task.priority;
+  const docFiles = (project.designDoc.files ?? []).filter(f => f.type === 'file');
+  document.getElementById('panel-task-linked-doc').innerHTML =
+    `<option value="">— none —</option>` +
+    docFiles.map(f => `<option value="${f.id}" ${f.id===task.linkedDocFileId?'selected':''}>${f.name}</option>`).join('');
+  document.getElementById('btn-goto-doc').style.display = task.linkedDocFileId ? '' : 'none';
+  switchDescTab('edit');
+  document.getElementById('task-panel').classList.add('open');
+}
+
+function closeTaskPanel() {
+  const panel = document.getElementById('task-panel');
+  panel.classList.remove('open', 'fullscreen');
+  document.getElementById('btn-panel-fullscreen').textContent = '⛶';
+  openTaskId = null;
+}
+
+function togglePanelFullscreen() {
+  const panel = document.getElementById('task-panel');
+  const btn = document.getElementById('btn-panel-fullscreen');
+  const isFull = panel.classList.toggle('fullscreen');
+  btn.textContent = isFull ? '⊡' : '⛶';
+}
+
+function openLinkedDoc() {
+  const project = currentProject();
+  const task = project?.tasks.find(t => t.id === openTaskId);
+  if (!task?.linkedDocFileId) return;
+  closeTaskPanel();
+  switchTab('designdoc');
+  // Wait for tab switch then open the file
+  setTimeout(() => openDocFile(task.linkedDocFileId), 50);
+}
+
+function saveTaskPanel() {
+  const project = currentProject();
+  const task = project?.tasks.find(t => t.id === openTaskId);
+  if (!task) return;
+  task.title = document.getElementById('panel-task-title').value;
+  const oldDesc = task.description ?? '';
+  const newDesc = document.getElementById('panel-task-desc').value;
+  // Delete uploaded images that were removed
+  const removed = extractUploadUrls(oldDesc).filter(u => !extractUploadUrls(newDesc).includes(u));
+  removed.forEach(u => deleteUploadUrl(u));
+  task.description = newDesc;
+  task.assignee = document.getElementById('panel-task-assignee').value.trim() || undefined;
+  task.linkedDocFileId = document.getElementById('panel-task-linked-doc').value || undefined;
+  task.stage = document.getElementById('panel-task-stage').value;
+  task.categoryId = document.getElementById('panel-task-cat').value;
+  task.priority = document.getElementById('panel-task-priority').value;
+  task.updatedAt = today();
+  saveDB();
+  closeTaskPanel();
+  renderSidebar();
+  renderKanban();
+}
+
+function deleteTask() {
+  if (!openTaskId) return;
+  const project = currentProject();
+  const task = project.tasks.find(t => t.id === openTaskId);
+  if (!task) return;
+  showConfirm('Delete Task', `Delete "${task.title}"? This cannot be undone.`, () => {
+    if (task.description) extractUploadUrls(task.description).forEach(u => deleteUploadUrl(u));
+    project.tasks = project.tasks.filter(t => t.id !== openTaskId);
+    saveDB();
+    closeTaskPanel();
+    renderSidebar();
+    renderKanban();
+  });
+}
+
+// ── New Task Modal ────────────────────────────────────────────────────────────
+function openNewTaskModal(defaultStage) {
+  const project = currentProject();
+  if (!project) return;
+  document.getElementById('new-stage').innerHTML =
+    project.stages.map(s => `<option ${s===defaultStage?'selected':''}>${s}</option>`).join('');
+  document.getElementById('new-cat').innerHTML =
+    project.categories.map(c => `<option value="${c.id}" ${activeCategoryFilter===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('');
+  document.getElementById('new-title').value = '';
+  document.getElementById('new-desc').value = '';
+  document.getElementById('new-assignee').value = '';
+  document.getElementById('new-priority').value = 'medium';
+  openModal('modal-new-task');
+  setTimeout(() => document.getElementById('new-title').focus(), 50);
+}
+
+function createTask() {
+  const title = document.getElementById('new-title').value.trim();
+  if (!title) { document.getElementById('new-title').focus(); return; }
+  const project = currentProject();
+  const assignee = document.getElementById('new-assignee').value.trim();
+  project.tasks.push({
+    id: generateId('task'), title,
+    description: document.getElementById('new-desc').value,
+    assignee: assignee || undefined,
+    stage: document.getElementById('new-stage').value,
+    categoryId: document.getElementById('new-cat').value,
+    priority: document.getElementById('new-priority').value,
+    createdAt: today(), updatedAt: today(),
+  });
+  saveDB();
+  closeModal('modal-new-task');
+  renderSidebar();
+  renderKanban();
+}
+
+// ── New Project ───────────────────────────────────────────────────────────────
+function createProject() {
+  const name = document.getElementById('np-name').value.trim();
+  if (!name) { document.getElementById('np-name').focus(); return; }
+  const project = {
+    id: generateId('proj'),
+    name,
+    description: document.getElementById('np-desc').value,
+    createdAt: today(),
+    categories: [
+      { id: generateId('cat'), name: 'Programming', color: '#4A90E2', icon: '💻' },
+      { id: generateId('cat'), name: 'Art',         color: '#7ED321', icon: '🎨' },
+      { id: generateId('cat'), name: 'Design',      color: '#F5A623', icon: '📐' },
+      { id: generateId('cat'), name: 'Audio',       color: '#9B59B6', icon: '🎵' },
+      { id: generateId('cat'), name: 'QA',          color: '#E74C3C', icon: '🧪' },
+    ],
+    stages: ['Backlog', 'In Progress', 'Review', 'Done'],
+    tasks: [],
+    designDoc: { files: [] },
+  };
+  db.projects.push(project);
+  currentProjectId = project.id;
+  activeCategoryFilter = null;
+  activeDocFileId = null;
+  saveDB();
+  closeModal('modal-new-project');
+  renderAll();
+}
+
+function deleteProject() {
+  const project = currentProject();
+  if (!project) return;
+  if (!confirm(`Delete project "${project.name}" and all its data? This cannot be undone.`)) return;
+  db.projects = db.projects.filter(p => p.id !== currentProjectId);
+  currentProjectId = db.projects[0]?.id ?? null;
+  activeCategoryFilter = null;
+  activeDocFileId = null;
+  saveDB();
+  renderAll();
+}
+
+// ── Doc folder/file creation ──────────────────────────────────────────────────
+function openNewFolderModal() {
+  document.getElementById('nf-name').value = '';
+  openModal('modal-new-folder');
+  setTimeout(() => document.getElementById('nf-name').focus(), 50);
+}
+
+function createFolder() {
+  const name = document.getElementById('nf-name').value.trim();
+  if (!name) { document.getElementById('nf-name').focus(); return; }
+  const project = currentProject();
+  if (!project) return;
+  project.designDoc.files.push({ id: generateId('folder'), type: 'folder', name, parentId: null, open: true });
+  saveDB();
+  closeModal('modal-new-folder');
+  renderDocTree(project);
+}
+
+function openNewFileModal() {
+  const project = currentProject();
+  if (!project) return;
+  document.getElementById('nfi-name').value = '';
+  const folders = project.designDoc.files.filter(f => f.type === 'folder');
+  document.getElementById('nfi-parent').innerHTML =
+    `<option value="">Root (no folder)</option>` +
+    folders.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+  openModal('modal-new-file');
+  setTimeout(() => document.getElementById('nfi-name').focus(), 50);
+}
+
+function createDocFile() {
+  let name = document.getElementById('nfi-name').value.trim();
+  if (!name) { document.getElementById('nfi-name').focus(); return; }
+  if (!name.includes('.')) name += '.md';
+  const project = currentProject();
+  if (!project) return;
+  const parentId = document.getElementById('nfi-parent').value || null;
+  const file = { id: generateId('file'), type: 'file', name, parentId, content: '' };
+  project.designDoc.files.push(file);
+  saveDB();
+  closeModal('modal-new-file');
+  activeDocFileId = file.id;
+  renderDocTree(project);
+  openDocFile(file.id, false);
+}
+
+// ── Tab switch ────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(`view-${tab}`).classList.add('active');
+  if (tab === 'designdoc') renderDesignDoc();
+}
+
+// ── Modal helpers ─────────────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function showConfirm(title, msg, onConfirm) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent = msg;
+  const ok = document.getElementById('confirm-ok');
+  const cancel = document.getElementById('confirm-cancel');
+  // Clone to clear old listeners
+  const newOk = ok.cloneNode(true);
+  const newCancel = cancel.cloneNode(true);
+  ok.replaceWith(newOk);
+  cancel.replaceWith(newCancel);
+  newOk.addEventListener('click', () => { closeModal('modal-confirm'); onConfirm(); });
+  newCancel.addEventListener('click', () => closeModal('modal-confirm'));
+  openModal('modal-confirm');
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Wire events ───────────────────────────────────────────────────────────────
+document.getElementById('project-select').addEventListener('change', e => {
+  currentProjectId = e.target.value;
+  activeCategoryFilter = null;
+  activeDocFileId = null;
+  renderAll();
+});
+document.getElementById('btn-new-project').addEventListener('click', () => {
+  document.getElementById('np-name').value = '';
+  document.getElementById('np-desc').value = '';
+  openModal('modal-new-project');
+  setTimeout(() => document.getElementById('np-name').focus(), 50);
+});
+document.getElementById('btn-delete-project').addEventListener('click', deleteProject);
+
+document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+
+// Kanban
+document.getElementById('btn-new-task').addEventListener('click', () => openNewTaskModal(null));
+
+// Task panel
+document.getElementById('btn-panel-close').addEventListener('click', closeTaskPanel);
+document.getElementById('btn-panel-save').addEventListener('click', saveTaskPanel);
+document.getElementById('btn-panel-fullscreen').addEventListener('click', togglePanelFullscreen);
+document.getElementById('panel-delete').addEventListener('click', deleteTask);
+document.getElementById('btn-goto-doc').addEventListener('click', openLinkedDoc);
+document.getElementById('panel-task-linked-doc').addEventListener('change', e => {
+  document.getElementById('btn-goto-doc').style.display = e.target.value ? '' : 'none';
+});
+
+// New Project modal
+document.getElementById('np-cancel').addEventListener('click', () => closeModal('modal-new-project'));
+document.getElementById('np-create').addEventListener('click', createProject);
+document.getElementById('np-name').addEventListener('keydown', e => { if (e.key === 'Enter') createProject(); });
+
+// New Task modal
+document.getElementById('nt-cancel').addEventListener('click', () => closeModal('modal-new-task'));
+document.getElementById('nt-create').addEventListener('click', createTask);
+document.getElementById('new-title').addEventListener('keydown', e => { if (e.key === 'Enter') createTask(); });
+
+// New Folder modal
+document.getElementById('btn-add-folder').addEventListener('click', openNewFolderModal);
+document.getElementById('nf-cancel').addEventListener('click', () => closeModal('modal-new-folder'));
+document.getElementById('nf-create').addEventListener('click', createFolder);
+document.getElementById('nf-name').addEventListener('keydown', e => { if (e.key === 'Enter') createFolder(); });
+
+// New File modal
+document.getElementById('btn-add-file').addEventListener('click', openNewFileModal);
+document.getElementById('nfi-cancel').addEventListener('click', () => closeModal('modal-new-file'));
+document.getElementById('nfi-create').addEventListener('click', createDocFile);
+document.getElementById('nfi-name').addEventListener('keydown', e => { if (e.key === 'Enter') createDocFile(); });
+
+// Close modals on backdrop click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+// Format toolbar buttons (task panel + doc editor)
+document.querySelectorAll('.fmt-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const ta = document.getElementById(btn.dataset.target);
+    if (!ta) return;
+    if (btn.dataset.fmt === 'image') insertImage(ta);
+    else applyFormat(ta, btn.dataset.fmt);
+  });
+});
+
+// Doc textarea live preview + auto-save
+document.getElementById('doc-textarea').addEventListener('input', e => {
+  renderDocPreview(e.target.value);
+  // Debounced auto-save
+  clearTimeout(window._docSaveTimer);
+  window._docSaveTimer = setTimeout(() => {
+    const project = currentProject();
+    if (!project || !activeDocFileId) return;
+    const file = project.designDoc.files.find(f => f.id === activeDocFileId);
+    if (file) { file.content = e.target.value; saveDB(); }
+  }, 800);
+});
+
+document.getElementById('btn-save-doc').addEventListener('click', () => {
+  const project = currentProject();
+  if (!project || !activeDocFileId) return;
+  const file = project.designDoc.files.find(f => f.id === activeDocFileId);
+  if (file) { file.content = document.getElementById('doc-textarea').value; saveDB(); }
+  const btn = document.getElementById('btn-save-doc');
+  btn.textContent = 'Saved ✓';
+  setTimeout(() => btn.textContent = 'Save', 1500);
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadDB().then(() => {
+  currentProjectId = db.projects[0]?.id ?? null;
+  renderAll();
+});
+</script>
+</body>
+</html>

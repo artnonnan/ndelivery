@@ -1,0 +1,52 @@
+{
+  "projects": [
+    {
+      "id": "proj_1775450542242_z65g4",
+      "name": "Cozy",
+      "description": "",
+      "createdAt": "2026-04-06",
+      "categories": [
+        {
+          "id": "cat_1775450542242_27fbf",
+          "name": "Programming",
+          "color": "#4A90E2",
+          "icon": "💻"
+        },
+        {
+          "id": "cat_1775450542242_qb2ls",
+          "name": "Art",
+          "color": "#7ED321",
+          "icon": "🎨"
+        },
+        {
+          "id": "cat_1775450542242_cu4bu",
+          "name": "Design",
+          "color": "#F5A623",
+          "icon": "📐"
+        },
+        {
+          "id": "cat_1775450542242_bgpo4",
+          "name": "Audio",
+          "color": "#9B59B6",
+          "icon": "🎵"
+        },
+        {
+          "id": "cat_1775450542242_n6y82",
+          "name": "QA",
+          "color": "#E74C3C",
+          "icon": "🧪"
+        }
+      ],
+      "stages": [
+        "Backlog",
+        "In Progress",
+        "Review",
+        "Done"
+      ],
+      "tasks": [],
+      "designDoc": {
+        "files": []
+      }
+    }
+  ]
+}

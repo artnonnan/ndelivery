@@ -1,0 +1,19 @@
+{
+  "name": "gameplan",
+  "version": "1.0.0",
+  "description": "HacknPlan-like project manager with MCP support",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "mcp": "node dist/server/mcp-server.js",
+    "web": "node dist/server/api-server.js",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0"
+  }
+}
